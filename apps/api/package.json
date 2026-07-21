@@ -1,0 +1,33 @@
+{
+  "name": "@detour/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@graphql-yoga/nestjs": "^3.0.0",
+    "@googlemaps/google-maps-services-js": "^3.4.0",
+    "@mapbox/polyline": "^1.2.1",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/graphql": "^13.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "ai": "^5.0.0",
+    "graphql": "^16.10.0",
+    "graphql-yoga": "^5.10.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/mapbox__polyline": "^1.0.5",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

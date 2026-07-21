@@ -1,0 +1,190 @@
+@import 'tailwindcss';
+
+:root {
+  --blue: #2b6bff;
+  --violet: #6a5cff;
+}
+
+body {
+  background: #fff;
+  color: #0a0c12;
+  font-family:
+    var(--font-inter),
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Animated gradient text — reserved for the headline phrase */
+@keyframes grad-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+.grad-text {
+  background: linear-gradient(90deg, #2b6bff, #6a5cff, #c44cff, #ff5ca8, #ff9147, #2b6bff);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: grad-pan 7s linear infinite;
+}
+
+/* Rotating sub-line word — italic, inherits the line's solid color */
+.rot-word {
+  display: inline-block;
+  font-style: italic;
+  color: inherit;
+  transition:
+    opacity 0.34s ease,
+    transform 0.34s ease;
+}
+.rot-word.out {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* Route dash flow */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+@keyframes dash-flow-2 {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+.route-dash {
+  animation: dash-flow 1.1s linear infinite;
+}
+.route-dash-2 {
+  animation: dash-flow-2 1.7s linear infinite;
+}
+
+/* Slow map drift */
+@keyframes map-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-9px, -6px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+.map-drift {
+  animation: map-drift 26s ease-in-out infinite;
+}
+
+/* Ambient glows */
+@keyframes glow-a {
+  0% {
+    transform: translate(-6%, -4%) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(7%, 5%) scale(1.16);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-6%, -4%) scale(1);
+    opacity: 0.9;
+  }
+}
+@keyframes glow-b {
+  0% {
+    transform: translate(5%, 3%) scale(1.1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-5%, -3%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(5%, 3%) scale(1.1);
+    opacity: 0.8;
+  }
+}
+.glow-a {
+  animation: glow-a 11s ease-in-out infinite;
+}
+.glow-b {
+  animation: glow-b 14s ease-in-out infinite;
+}
+
+/* POI pins: bob + ping ring */
+@keyframes poi-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%);
+  }
+  50% {
+    transform: translate(-50%, -56%);
+  }
+}
+@keyframes poi-ping {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+.poi-pin {
+  animation: poi-bob 4.5s ease-in-out infinite;
+}
+.poi-ring {
+  animation: poi-ping 2.8s ease-out infinite;
+}
+
+/* Blinking caret */
+@keyframes caret {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+.caret {
+  animation: caret 1s steps(1) infinite;
+}
+
+/* Card entrance */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fade-up 0.4s ease both;
+}
+
+/* Step spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
