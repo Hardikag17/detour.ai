@@ -8,6 +8,16 @@ export interface GeocodeResult {
   point: Point;
 }
 
+/** Pull Google's real error message out of an axios error for actionable logs. */
+export function googleErrorDetail(err: unknown): string {
+  const e = err as {
+    message?: string;
+    response?: { status?: number; data?: { error_message?: string; status?: string } };
+  };
+  const detail = e.response?.data?.error_message ?? e.response?.data?.status ?? '';
+  return `${e.response?.status ?? ''} ${detail || (e.message ?? 'unknown error')}`.trim();
+}
+
 @Injectable()
 export class GeocodingService {
   private readonly logger = new Logger(GeocodingService.name);
@@ -36,7 +46,7 @@ export class GeocodingService {
         },
       };
     } catch (err) {
-      this.logger.warn(`Geocode failed for "${query}": ${(err as Error).message}`);
+      this.logger.warn(`Geocode failed for "${query}": ${googleErrorDetail(err)}`);
       return mockGeocode(query);
     }
   }

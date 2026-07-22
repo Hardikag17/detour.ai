@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Client, TravelMode, TravelRestriction } from '@googlemaps/google-maps-services-js';
 import { Point } from './geo.util';
+import { googleErrorDetail } from './geocoding.service';
 import { mockRoute } from './mock-data';
 
 export interface RouteResult {
@@ -9,10 +9,22 @@ export interface RouteResult {
   durationMin: number;
 }
 
+interface ComputeRoutesResponse {
+  routes?: Array<{
+    distanceMeters?: number;
+    duration?: string;
+    polyline?: { encodedPolyline?: string };
+  }>;
+  error?: { message?: string };
+}
+
+/**
+ * Driving routes via the Routes API (the modern replacement for the legacy
+ * Directions API, which new Google Cloud projects can no longer enable).
+ */
 @Injectable()
 export class DirectionsService {
   private readonly logger = new Logger(DirectionsService.name);
-  private readonly client = new Client({});
   private readonly apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   get isLive(): boolean {
@@ -28,25 +40,39 @@ export class DirectionsService {
       return mockRoute(origin, destination);
     }
     try {
-      const res = await this.client.directions({
-        params: {
-          origin: `${origin.lat},${origin.lng}`,
-          destination: `${destination.lat},${destination.lng}`,
-          mode: TravelMode.driving,
-          ...(opts.avoidTolls ? { avoid: [TravelRestriction.tolls] } : {}),
-          key: this.apiKey,
+      const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': this.apiKey,
+          'X-Goog-FieldMask':
+            'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline',
         },
+        body: JSON.stringify({
+          origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
+          destination: {
+            location: { latLng: { latitude: destination.lat, longitude: destination.lng } },
+          },
+          travelMode: 'DRIVE',
+          ...(opts.avoidTolls ? { routeModifiers: { avoidTolls: true } } : {}),
+        }),
+        signal: AbortSignal.timeout(10_000),
       });
-      const route = res.data.routes[0];
-      if (!route) return mockRoute(origin, destination);
-      const leg = route.legs[0];
+      const data = (await res.json()) as ComputeRoutesResponse;
+      if (!res.ok) {
+        throw new Error(`${res.status} ${data.error?.message ?? 'Routes API error'}`);
+      }
+      const route = data.routes?.[0];
+      const polyline = route?.polyline?.encodedPolyline;
+      if (!route || !polyline) return mockRoute(origin, destination);
+      const durationSec = Number.parseInt(route.duration ?? '0', 10);
       return {
-        polyline: route.overview_polyline.points,
-        distanceKm: Math.round((leg?.distance?.value ?? 0) / 1000),
-        durationMin: Math.round((leg?.duration?.value ?? 0) / 60),
+        polyline,
+        distanceKm: Math.round((route.distanceMeters ?? 0) / 1000),
+        durationMin: Math.round(durationSec / 60),
       };
     } catch (err) {
-      this.logger.warn(`Directions failed: ${(err as Error).message} — using mock route`);
+      this.logger.warn(`Routes API failed: ${googleErrorDetail(err)} — using mock route`);
       return mockRoute(origin, destination);
     }
   }
