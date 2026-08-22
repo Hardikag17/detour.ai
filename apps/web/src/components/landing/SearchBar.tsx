@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Icon } from '@/lib/icons';
+import { RecentTrips } from '@/components/landing/RecentTrips';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
 
@@ -41,7 +42,12 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pt-9 pb-4 text-center">
-      {/* Try suggestions */}
+      {/* Recent trips (Postgres-backed) + Try suggestions */}
+      {status === 'idle' && (
+        <div className="pointer-events-auto">
+          <RecentTrips />
+        </div>
+      )}
       {status === 'idle' && (
         <div className="pointer-events-auto mb-2.5 flex flex-wrap items-center justify-center gap-1.5">
           <span className="text-[10.5px] text-[#a2a6b4]">Try</span>

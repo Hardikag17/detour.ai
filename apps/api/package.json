@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/google": "^2.0.84",
     "@googlemaps/google-maps-services-js": "^3.4.0",
     "@graphql-yoga/nestjs": "^3.0.0",
     "@mapbox/polyline": "^1.2.1",
@@ -17,12 +18,16 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/graphql": "^13.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.3",
     "ai": "^5.0.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.10.0",
     "graphql-yoga": "^5.10.0",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "typeorm": "^1.1.0",
     "zod": "^4.0.0"
   },
   "devDependencies": {

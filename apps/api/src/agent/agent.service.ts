@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createAnthropic } from '@ai-sdk/anthropic';
-import { stepCountIs, streamText, type ModelMessage } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { stepCountIs, streamText, type LanguageModel, type ModelMessage } from 'ai';
 import { randomUUID } from 'node:crypto';
 import { DirectionsService } from '../google/directions.service';
 import { GeocodingService } from '../google/geocoding.service';
@@ -16,7 +17,26 @@ import { buildTools } from './tools';
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
-  private readonly apiKey = process.env.ANTHROPIC_API_KEY;
+
+  /**
+   * Provider auto-selection: Claude when ANTHROPIC_API_KEY is set, else Gemini
+   * (GOOGLE_GENERATIVE_AI_API_KEY, falling back to the Maps key — same Google
+   * Cloud project can serve both), else the scripted demo agent.
+   */
+  private resolveModel(): { model: LanguageModel; label: string } | null {
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (anthropicKey) {
+      const anthropic = createAnthropic({ apiKey: anthropicKey });
+      return { model: anthropic('claude-sonnet-4-5'), label: 'Claude (claude-sonnet-4-5)' };
+    }
+    const googleKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+    if (googleKey) {
+      const google = createGoogleGenerativeAI({ apiKey: googleKey });
+      return { model: google('gemini-2.5-flash'), label: 'Gemini (gemini-2.5-flash)' };
+    }
+    return null;
+  }
 
   constructor(
     private readonly directions: DirectionsService,
@@ -35,13 +55,14 @@ export class AgentService {
       places: this.places,
     };
 
-    if (!this.apiKey) {
-      this.logger.log('ANTHROPIC_API_KEY not set — running mock agent (demo mode)');
+    const resolved = this.resolveModel();
+    if (!resolved) {
+      this.logger.log('No LLM key set — running mock agent (demo mode)');
       yield* runMockAgent(input.prompt, ctx, services, planId);
       return;
     }
+    this.logger.log(`Agent LLM: ${resolved.label}`);
 
-    const anthropic = createAnthropic({ apiKey: this.apiKey });
     const history = this.sessions.getMessages(sessionId);
     const isRefinement = Boolean(input.planId) && history.length > 0;
 
@@ -53,7 +74,7 @@ export class AgentService {
     };
 
     const result = streamText({
-      model: anthropic('claude-sonnet-4-5'),
+      model: resolved.model,
       system: SYSTEM_PROMPT,
       messages: [...history, userMessage],
       tools: buildTools(services, ctx),

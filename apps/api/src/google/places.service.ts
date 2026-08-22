@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { RedisCacheService } from '../cache/redis-cache.service';
 import { Point } from './geo.util';
 import { googleErrorDetail } from './geocoding.service';
 import { mockPlacesNear } from './mock-data';
@@ -43,6 +44,8 @@ export class PlacesService {
   private readonly logger = new Logger(PlacesService.name);
   private readonly apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
+  constructor(private readonly cache: RedisCacheService) {}
+
   get isLive(): boolean {
     return Boolean(this.apiKey);
   }
@@ -57,6 +60,10 @@ export class PlacesService {
     if (!this.apiKey) {
       return mockPlacesNear(point, keyword, sampleIndex);
     }
+    // ~110m grid rounding keeps nearby sample points from fragmenting the cache.
+    const cacheKey = `places:${point.lat.toFixed(3)},${point.lng.toFixed(3)}:${Math.round(radiusM / 1000)}km:${keyword.trim().toLowerCase()}`;
+    const cached = await this.cache.get<PlaceCandidate[]>(cacheKey);
+    if (cached) return cached;
     try {
       const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
         method: 'POST',
@@ -82,7 +89,7 @@ export class PlacesService {
       if (!res.ok) {
         throw new Error(`${res.status} ${data.error?.message ?? 'Places API error'}`);
       }
-      return (data.places ?? []).slice(0, 8).map((p, i) => ({
+      const results: PlaceCandidate[] = (data.places ?? []).slice(0, 8).map((p, i) => ({
         placeId: p.id ?? `unknown-${sampleIndex}-${i}`,
         name: p.displayName?.text ?? 'Unknown place',
         category: inferCategory(keyword, p.types ?? []),
@@ -94,6 +101,8 @@ export class PlacesService {
           lng: p.location?.longitude ?? point.lng,
         },
       }));
+      await this.cache.set(cacheKey, results, 6 * 3600);
+      return results;
     } catch (err) {
       this.logger.warn(`Places search failed: ${googleErrorDetail(err)} — using mock places`);
       return mockPlacesNear(point, keyword, sampleIndex);
