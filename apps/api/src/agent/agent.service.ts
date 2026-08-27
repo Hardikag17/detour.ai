@@ -30,10 +30,12 @@ export class AgentService {
       return { model: anthropic('claude-sonnet-4-5'), label: 'Claude (claude-sonnet-4-5)' };
     }
     const googleKey =
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY;
+      process.env.GEMINI_API_KEY ??
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ??
+      process.env.GOOGLE_MAPS_API_KEY;
     if (googleKey) {
       const google = createGoogleGenerativeAI({ apiKey: googleKey });
-      return { model: google('gemini-2.5-flash'), label: 'Gemini (gemini-2.5-flash)' };
+      return { model: google('gemini-3.6-flash'), label: 'Gemini (gemini-3.6-flash)' };
     }
     return null;
   }
