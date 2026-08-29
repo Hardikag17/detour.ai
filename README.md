@@ -13,8 +13,11 @@
   <a href="#highlights">Highlights</a> ·
   <a href="#how-the-agent-works">How it works</a> ·
   <a href="#tech-stack">Tech stack</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#how-this-was-built">Vibecoded</a>
+  <a href="#quick-start">Quick start</a>
+</p>
+
+<p align="center">
+  <i>Vibecoded over a weekend as a side project — for me, and for everyone learning agentic AI.</i>
 </p>
 
 ![landing](./snips/landing.png)
@@ -104,14 +107,8 @@ apps/web/          Next.js frontend — landing, sidebar, live map, results
 apps/api/          NestJS backend — agent loop, tools, Google services, persistence
 packages/shared/   Types, GraphQL documents, and constants shared by both apps
 snips/             README screenshots
-docker-compose.yml Postgres + Redis (dev), optional full-stack profile
+docker-compose.yml Postgres + Redis (dev)
 ```
-
-## How this was built
-
-I vibecoded this project with Claude Code — describing what I wanted, reviewing every change, and asking "why" at each step until the concepts stuck. It doubled as my crash course in agentic AI: tool calling, streamed reasoning, trade-off ranking, and conversational re-planning, learned by building rather than by reading.
-
-If you're trying to learn agentic AI yourself, this codebase is meant to be readable: start at `apps/api/src/agent/tools.ts` (what the agent can do), then `agent.service.ts` (the loop), then `stream-bridge.ts` (how decisions reach the UI live). The mock agent lets you trace the whole pipeline without a single API key.
 
 ## Project status
 
