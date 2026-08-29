@@ -1,5 +1,6 @@
 import { Args, Field, ID, Int, Float, ObjectType, Query, Resolver } from '@nestjs/graphql';
 import { LatLng, StopEvent, WhyReason } from '../graphql/types/plan.types';
+import { make } from '../util/make';
 import { TripEntity } from './trip.entity';
 import { TripsService } from './trips.service';
 
@@ -29,6 +30,9 @@ export class SavedTrip {
   @Field({ nullable: true })
   summary?: string;
 
+  @Field({ nullable: true, description: 'Encoded route polyline (null on trips saved before it was stored)' })
+  polyline?: string;
+
   @Field(() => [StopEvent])
   stops!: StopEvent[];
 
@@ -37,34 +41,24 @@ export class SavedTrip {
 }
 
 function toSavedTrip(t: TripEntity): SavedTrip {
-  const saved = new SavedTrip();
-  saved.id = t.id;
-  saved.prompt = t.prompt;
-  saved.detourKm = t.detourKm;
-  saved.originName = t.originName;
-  saved.destinationName = t.destinationName;
-  saved.distanceKm = t.distanceKm;
-  saved.durationMin = t.durationMin;
-  saved.summary = t.summary ?? undefined;
-  saved.createdAt = t.createdAt.toISOString();
-  saved.stops = [...t.stops]
-    .sort((a, b) => a.position - b.position)
-    .map((s) => {
-      const stop = new StopEvent();
-      stop.id = s.id;
-      stop.placeId = s.placeId;
-      stop.name = s.name;
-      stop.category = s.category;
-      stop.rating = s.rating ?? undefined;
-      stop.reviewCount = s.reviewCount ?? undefined;
-      stop.detourKm = s.detourKm;
-      stop.tier = s.tier;
-      stop.legLabel = s.legLabel ?? undefined;
-      stop.location = Object.assign(new LatLng(), { lat: s.lat, lng: s.lng });
-      stop.why = s.reasons.map((r) => Object.assign(new WhyReason(), r));
-      return stop;
-    });
-  return saved;
+  return make(SavedTrip, {
+    ...t,
+    summary: t.summary ?? undefined,
+    polyline: t.polyline ?? undefined,
+    createdAt: t.createdAt.toISOString(),
+    stops: [...t.stops]
+      .sort((a, b) => a.position - b.position)
+      .map((s) =>
+        make(StopEvent, {
+          ...s,
+          rating: s.rating ?? undefined,
+          reviewCount: s.reviewCount ?? undefined,
+          legLabel: s.legLabel ?? undefined,
+          location: make(LatLng, { lat: s.lat, lng: s.lng }),
+          why: s.reasons.map((r) => make(WhyReason, r)),
+        }),
+      ),
+  });
 }
 
 @Resolver()

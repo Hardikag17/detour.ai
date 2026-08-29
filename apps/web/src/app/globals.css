@@ -3,21 +3,32 @@
 :root {
   --blue: #2b6bff;
   --violet: #6a5cff;
+  --sidebar-w: 0px; /* single source of truth; sidebar, page padding, search bar all read it */
+}
+@media (min-width: 768px) {
+  :root {
+    --sidebar-w: 240px;
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --sidebar-w: 340px;
+  }
 }
 
 body {
   background: #fff;
   color: #0a0c12;
   font-family:
-    var(--font-inter),
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+    var(--font-cascadia),
+    'Cascadia Mono',
+    ui-monospace,
+    'SF Mono',
+    monospace;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Animated gradient text — reserved for the headline phrase */
+/* Headline phrase — Satisfy script with the animated brand gradient */
 @keyframes grad-pan {
   0% {
     background-position: 0% 50%;
@@ -27,6 +38,10 @@ body {
   }
 }
 .grad-text {
+  font-family: var(--font-satisfy), 'Satisfy', cursive;
+  font-weight: 400;
+  letter-spacing: 0;
+  font-size: 1.12em;
   background: linear-gradient(90deg, #2b6bff, #6a5cff, #c44cff, #ff5ca8, #ff9147, #2b6bff);
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -34,6 +49,7 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
   animation: grad-pan 7s linear infinite;
+  padding-right: 0.15em; /* keep the script's trailing swash from clipping */
 }
 
 /* Rotating sub-line word — italic, inherits the line's solid color */
@@ -187,4 +203,34 @@ body {
 }
 .spin {
   animation: spin 0.9s linear infinite;
+}
+
+/* Large screens: the hero-route SVG stretches across the viewport, so slim its
+   strokes/markers back to natural map proportions (values are SVG user units). */
+@media (min-width: 1024px) {
+  .route-casing {
+    stroke-width: 5;
+  }
+  .route-dash {
+    stroke-width: 2;
+    stroke-dasharray: 1 7;
+  }
+  .route-dash-2 {
+    stroke-width: 2;
+    stroke-dasharray: 7 13;
+  }
+  .traveler-halo {
+    r: 8;
+  }
+  .traveler-dot {
+    r: 4;
+    stroke-width: 1.4;
+  }
+  .origin-dot {
+    r: 5;
+    stroke-width: 1.4;
+  }
+  .dest-pin {
+    transform: translate(620px, 70px) scale(0.5);
+  }
 }

@@ -112,21 +112,6 @@ export class StopEvent {
 }
 
 @ObjectType()
-export class StopUpdatedEvent {
-  @Field(() => ID)
-  id: string;
-
-  @Field({ description: 'replaced | removed | kept' })
-  change: string;
-
-  @Field(() => StopEvent, { nullable: true })
-  stop?: StopEvent;
-
-  @Field({ nullable: true })
-  reason?: string;
-}
-
-@ObjectType()
 export class PlanSummaryEvent {
   @Field(() => ID)
   planId: string;
@@ -150,11 +135,10 @@ export class PlanErrorEvent {
 export const PlanEvent = createUnionType({
   name: 'PlanEvent',
   types: () =>
-    [StepEvent, RouteEvent, StopEvent, StopUpdatedEvent, PlanSummaryEvent, PlanErrorEvent] as const,
+    [StepEvent, RouteEvent, StopEvent, PlanSummaryEvent, PlanErrorEvent] as const,
   resolveType(value: Record<string, unknown>) {
     if ('label' in value) return StepEvent;
     if ('polyline' in value) return RouteEvent;
-    if ('change' in value) return StopUpdatedEvent;
     if ('why' in value) return StopEvent;
     if ('summary' in value) return PlanSummaryEvent;
     if ('message' in value) return PlanErrorEvent;
@@ -163,4 +147,4 @@ export const PlanEvent = createUnionType({
 });
 
 export type PlanEventPayload =
-  StepEvent | RouteEvent | StopEvent | StopUpdatedEvent | PlanSummaryEvent | PlanErrorEvent;
+  StepEvent | RouteEvent | StopEvent | PlanSummaryEvent | PlanErrorEvent;

@@ -21,54 +21,25 @@ const POIS: Array<{
   { left: '86.5%', top: '20.5%', color: '#d85a30', icon: 'bed', delay: '2.4s' },
 ];
 
-/** The living street-map background with the animated grid-following route (idle hero). */
+/**
+ * The living street-map hero. Static scenery (blocks/park/river/roads) is a
+ * cached asset — public/assets/map-grid.svg — stretched behind the animated
+ * layer (route, driving marker, POI pins), which stays inline for CSS control
+ * and React interactivity.
+ */
 export function MapCanvas() {
   return (
     <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-      {/* Street map, faded so the foreground pops */}
+      {/* Faded drifting layer: static grid asset + animated route on top */}
       <div className="map-drift absolute inset-0 opacity-60">
+        {/* Small screens: one stretched scene. Large screens: tile at natural
+            street scale so the map doesn't look zoomed in. */}
+        <div className="absolute inset-0 bg-[url(/assets/map-grid.svg)] bg-[length:100%_100%] lg:bg-[length:830px_650px] lg:bg-repeat" />
         <svg
           viewBox="0 0 690 540"
           preserveAspectRatio="none"
           className="absolute inset-0 h-full w-full"
         >
-          <rect x="-20" y="-20" width="730" height="580" fill="#ffffff" />
-          {/* City blocks with soft color tints */}
-          <rect x="30" y="30" width="190" height="80" fill="#eef3fc" />
-          <rect x="270" y="30" width="240" height="80" fill="#f5f7fb" />
-          <rect x="560" y="30" width="120" height="80" fill="#faf4e8" />
-          <rect x="30" y="150" width="190" height="90" fill="#f5f7fb" />
-          <rect x="270" y="150" width="240" height="40" fill="#eef3fc" />
-          <rect x="560" y="150" width="120" height="90" fill="#f5f7fb" />
-          <rect x="30" y="270" width="190" height="80" fill="#fceeea" />
-          <rect x="410" y="270" width="100" height="80" fill="#f5f7fb" />
-          <rect x="560" y="270" width="120" height="80" fill="#eef7f0" />
-          <rect x="30" y="390" width="190" height="80" fill="#f5f7fb" />
-          <rect x="270" y="390" width="240" height="80" fill="#faf4e8" />
-          <rect x="560" y="390" width="120" height="80" fill="#f5f7fb" />
-          {/* Park + river */}
-          <rect x="270" y="210" width="120" height="60" fill="#e7f3ea" />
-          <path
-            d="M-20 150 C 130 140, 260 172, 420 156 S 600 142, 710 158 L 710 196 C 600 184, 470 200, 420 196 S 130 182, -20 194 Z"
-            fill="#dfeafb"
-          />
-          {/* Road grid */}
-          <g stroke="#e4e8f1" strokeWidth="10" fill="none" strokeLinecap="round">
-            <path d="M-20 130 H 710" />
-            <path d="M-20 250 H 710" />
-            <path d="M-20 370 H 710" />
-            <path d="M-20 470 H 710" />
-            <path d="M250 -20 V 560" />
-            <path d="M390 -20 V 560" />
-            <path d="M530 -20 V 560" />
-          </g>
-          <g stroke="#edeff6" strokeWidth="5" fill="none" strokeLinecap="round">
-            <path d="M-20 60 H 710" />
-            <path d="M110 -20 V 560" />
-            <path d="M620 -20 V 560" />
-            <path d="M680 -20 V 560" />
-          </g>
-
           {/* The route: base + flowing dash layers, following the grid with 90° turns */}
           <path
             id="hero-route"
@@ -78,6 +49,7 @@ export function MapCanvas() {
             strokeWidth="11"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="route-casing"
           />
           <path
             d={ROUTE_D}
@@ -103,20 +75,20 @@ export function MapCanvas() {
           />
 
           {/* Marker driving the route */}
-          <circle r="15" fill="#2b6bff" opacity="0.2">
+          <circle r="15" fill="#2b6bff" opacity="0.2" className="traveler-halo">
             <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
               <mpath href="#hero-route" />
             </animateMotion>
           </circle>
-          <circle r="7" fill="#2b6bff" stroke="#fff" strokeWidth="2.5">
+          <circle r="7" fill="#2b6bff" stroke="#fff" strokeWidth="2.5" className="traveler-dot">
             <animateMotion dur="6s" repeatCount="indefinite" rotate="auto">
               <mpath href="#hero-route" />
             </animateMotion>
           </circle>
 
           {/* Origin + destination */}
-          <circle cx="70" cy="470" r="8.5" fill="#18a06a" stroke="#fff" strokeWidth="2.5" />
-          <g transform="translate(620,70)">
+          <circle cx="70" cy="470" r="8.5" fill="#18a06a" strokeWidth="2.5" className="origin-dot" stroke="#fff" />
+          <g transform="translate(620,70)" className="dest-pin">
             <path
               d="M0 -15 C 8 -15 13 -9 13 -2 C 13 6 0 16 0 16 C 0 16 -13 6 -13 -2 C -13 -9 -8 -15 0 -15 Z"
               fill="#e2504a"

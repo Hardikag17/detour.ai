@@ -3,7 +3,7 @@
 import type { StopEvent } from '@detour/shared';
 import { CATEGORY_ICON, Icon, WHY_ICON } from '@/lib/icons';
 import { useUiStore } from '@/store/uiStore';
-import { CATEGORY_COLOR } from './RouteCanvas';
+import { CATEGORY_COLOR } from '@detour/shared/helpers/constants';
 
 const CATEGORY_BG: Record<string, string> = {
   cafe: '#eef3fc',

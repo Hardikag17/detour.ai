@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DETOUR } from '@detour/shared/helpers/constants';
 
 interface UiState {
   prompt: string;
@@ -12,7 +13,7 @@ interface UiState {
 
 export const useUiStore = create<UiState>((set) => ({
   prompt: '',
-  detourKm: 5,
+  detourKm: DETOUR.DEFAULT_KM,
   selectedStopId: null,
   sessionId:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto

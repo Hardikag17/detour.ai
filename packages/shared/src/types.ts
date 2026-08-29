@@ -51,14 +51,6 @@ export interface StopEvent {
   why: WhyReason[];
 }
 
-export interface StopUpdatedEvent {
-  __typename: 'StopUpdatedEvent';
-  id: string;
-  change: 'replaced' | 'removed' | 'kept' | string;
-  stop?: StopEvent | null;
-  reason?: string | null;
-}
-
 export interface PlanSummaryEvent {
   __typename: 'PlanSummaryEvent';
   planId: string;
@@ -73,7 +65,7 @@ export interface PlanErrorEvent {
 }
 
 export type PlanEvent =
-  StepEvent | RouteEvent | StopEvent | StopUpdatedEvent | PlanSummaryEvent | PlanErrorEvent;
+  StepEvent | RouteEvent | StopEvent | PlanSummaryEvent | PlanErrorEvent;
 
 export interface PlanTripInput {
   prompt: string;

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { stepCountIs, streamText, type LanguageModel, type ModelMessage } from 'ai';
+import { AGENT } from '../config';
 import { randomUUID } from 'node:crypto';
 import { DirectionsService } from '../google/directions.service';
 import { GeocodingService } from '../google/geocoding.service';
@@ -27,7 +28,7 @@ export class AgentService {
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (anthropicKey) {
       const anthropic = createAnthropic({ apiKey: anthropicKey });
-      return { model: anthropic('claude-sonnet-4-5'), label: 'Claude (claude-sonnet-4-5)' };
+      return { model: anthropic(AGENT.CLAUDE_MODEL), label: `Claude (${AGENT.CLAUDE_MODEL})` };
     }
     const googleKey =
       process.env.GEMINI_API_KEY ??
@@ -35,7 +36,7 @@ export class AgentService {
       process.env.GOOGLE_MAPS_API_KEY;
     if (googleKey) {
       const google = createGoogleGenerativeAI({ apiKey: googleKey });
-      return { model: google('gemini-3.6-flash'), label: 'Gemini (gemini-3.6-flash)' };
+      return { model: google(AGENT.GEMINI_MODEL), label: `Gemini (${AGENT.GEMINI_MODEL})` };
     }
     return null;
   }
@@ -80,7 +81,7 @@ export class AgentService {
       system: SYSTEM_PROMPT,
       messages: [...history, userMessage],
       tools: buildTools(services, ctx),
-      stopWhen: stepCountIs(14),
+      stopWhen: stepCountIs(AGENT.MAX_STEPS),
       onError: ({ error }) => this.logger.error(`Agent stream error: ${String(error)}`),
     });
 

@@ -7,6 +7,7 @@ import {
   RouteEvent,
   StopEvent,
 } from '../graphql/types/plan.types';
+import { make } from '../util/make';
 import { StopEntity, TripEntity } from './trip.entity';
 
 /**
@@ -44,22 +45,20 @@ export class TripsService {
         distanceKm: route.distanceKm,
         durationMin: route.durationMin,
         summary: summary?.summary ?? null,
-        stops: stops.map((s, i) => {
-          const stop = new StopEntity();
-          stop.position = i;
-          stop.placeId = s.placeId;
-          stop.name = s.name;
-          stop.category = s.category;
-          stop.rating = s.rating ?? null;
-          stop.reviewCount = s.reviewCount ?? null;
-          stop.detourKm = s.detourKm;
-          stop.tier = s.tier;
-          stop.legLabel = s.legLabel ?? null;
-          stop.reasons = s.why.map((w) => ({ icon: w.icon, text: w.text }));
-          stop.lat = s.location.lat;
-          stop.lng = s.location.lng;
-          return stop;
-        }),
+        polyline: route.polyline ?? null,
+        // Entity ids are DB-generated; the event's synthetic id must not leak in.
+        stops: stops.map(({ id: _id, ...s }, i) =>
+          make(StopEntity, {
+            ...s,
+            position: i,
+            rating: s.rating ?? null,
+            reviewCount: s.reviewCount ?? null,
+            legLabel: s.legLabel ?? null,
+            reasons: s.why.map((w) => ({ icon: w.icon, text: w.text })),
+            lat: s.location.lat,
+            lng: s.location.lng,
+          }),
+        ),
       });
       // Refinements re-save under the same planId: replace stops wholesale.
       await this.trips.manager.transaction(async (em) => {

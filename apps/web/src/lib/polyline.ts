@@ -28,27 +28,3 @@ export function decodePolyline(encoded: string): Pt[] {
   return points;
 }
 
-export interface Projector {
-  x: (p: Pt) => number;
-  y: (p: Pt) => number;
-}
-
-/** Fit a set of lat/lng points into an SVG viewBox with padding. */
-export function makeProjector(points: Pt[], width: number, height: number, pad = 40): Projector {
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const spanLat = Math.max(maxLat - minLat, 1e-6);
-  const spanLng = Math.max(maxLng - minLng, 1e-6);
-  // Keep aspect ratio: use the larger normalized span.
-  const scale = Math.min((width - pad * 2) / spanLng, (height - pad * 2) / spanLat);
-  const cx = (minLng + maxLng) / 2;
-  const cy = (minLat + maxLat) / 2;
-  return {
-    x: (p) => width / 2 + (p.lng - cx) * scale,
-    y: (p) => height / 2 - (p.lat - cy) * scale,
-  };
-}

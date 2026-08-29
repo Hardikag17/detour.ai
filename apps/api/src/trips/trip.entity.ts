@@ -35,6 +35,10 @@ export class TripEntity {
   @Column('text', { nullable: true })
   summary!: string | null;
 
+  /** Encoded route polyline — lets saved trips redraw the map without re-planning. */
+  @Column('text', { nullable: true })
+  polyline!: string | null;
+
   @OneToMany(() => StopEntity, (stop) => stop.trip, { cascade: true, eager: true })
   stops!: StopEntity[];
 

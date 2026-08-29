@@ -9,7 +9,6 @@ import {
   PlanTripInput,
   RouteEvent,
   StopEvent,
-  StopUpdatedEvent,
 } from './types/plan.types';
 
 @Resolver()
@@ -44,10 +43,7 @@ export class PlanResolver {
     for await (const event of this.agent.runTripAgent(input)) {
       if (event instanceof RouteEvent) route = event;
       else if (event instanceof StopEvent) stops.set(event.id, event);
-      else if (event instanceof StopUpdatedEvent) {
-        if (event.change === 'removed') stops.delete(event.id);
-        else if (event.stop) stops.set(event.stop.id, event.stop);
-      } else if (event instanceof PlanSummaryEvent) summary = event;
+      else if (event instanceof PlanSummaryEvent) summary = event;
       yield event;
     }
 

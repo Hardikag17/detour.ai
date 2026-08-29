@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { CACHE_TTL_S, PLACES } from '../config';
 import { RedisCacheService } from '../cache/redis-cache.service';
 import { Point } from './geo.util';
-import { googleErrorDetail } from './geocoding.service';
+import { googleErrorDetail, googleFetch } from './google-fetch';
 import { mockPlacesNear } from './mock-data';
 
 export interface PlaceCandidate {
@@ -24,10 +25,9 @@ interface SearchTextResponse {
     location?: { latitude?: number; longitude?: number };
     types?: string[];
   }>;
-  error?: { message?: string };
 }
 
-const PRICE_LEVEL_MAP: Record<string, number> = {
+const PRICE_LEVELS: Record<string, number> = {
   PRICE_LEVEL_FREE: 0,
   PRICE_LEVEL_INEXPENSIVE: 1,
   PRICE_LEVEL_MODERATE: 2,
@@ -46,10 +46,6 @@ export class PlacesService {
 
   constructor(private readonly cache: RedisCacheService) {}
 
-  get isLive(): boolean {
-    return Boolean(this.apiKey);
-  }
-
   /** Search places near a point by free-text keyword (e.g. "pet-friendly cafe"). */
   async searchNear(
     point: Point,
@@ -57,52 +53,40 @@ export class PlacesService {
     radiusM: number,
     sampleIndex = 0,
   ): Promise<PlaceCandidate[]> {
-    if (!this.apiKey) {
-      return mockPlacesNear(point, keyword, sampleIndex);
-    }
+    if (!this.apiKey) return mockPlacesNear(point, keyword, sampleIndex);
+
     // ~110m grid rounding keeps nearby sample points from fragmenting the cache.
-    const cacheKey = `places:${point.lat.toFixed(3)},${point.lng.toFixed(3)}:${Math.round(radiusM / 1000)}km:${keyword.trim().toLowerCase()}`;
-    const cached = await this.cache.get<PlaceCandidate[]>(cacheKey);
-    if (cached) return cached;
+    const key = `places:${point.lat.toFixed(3)},${point.lng.toFixed(3)}:${Math.round(radiusM / 1000)}km:${keyword.trim().toLowerCase()}`;
     try {
-      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': this.apiKey,
-          'X-Goog-FieldMask':
-            'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.location,places.types',
-        },
-        body: JSON.stringify({
-          textQuery: keyword,
-          locationBias: {
-            circle: {
-              center: { latitude: point.lat, longitude: point.lng },
-              radius: Math.min(radiusM, 50_000),
+      return await this.cache.wrap(key, CACHE_TTL_S.PLACES, async () => {
+        const data = await googleFetch<SearchTextResponse>(
+          'https://places.googleapis.com/v1/places:searchText',
+          this.apiKey!,
+          'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.location,places.types',
+          {
+            textQuery: keyword,
+            locationBias: {
+              circle: {
+                center: { latitude: point.lat, longitude: point.lng },
+                radius: Math.min(radiusM, PLACES.RADIUS_CAP_M),
+              },
             },
+            maxResultCount: PLACES.MAX_RESULTS,
           },
-          maxResultCount: 8,
-        }),
-        signal: AbortSignal.timeout(10_000),
+        );
+        return (data.places ?? []).slice(0, PLACES.MAX_RESULTS).map((p, i) => ({
+          placeId: p.id ?? `unknown-${sampleIndex}-${i}`,
+          name: p.displayName?.text ?? 'Unknown place',
+          category: inferCategory(keyword, p.types ?? []),
+          rating: p.rating,
+          reviewCount: p.userRatingCount,
+          priceLevel: p.priceLevel ? PRICE_LEVELS[p.priceLevel] : undefined,
+          location: {
+            lat: p.location?.latitude ?? point.lat,
+            lng: p.location?.longitude ?? point.lng,
+          },
+        }));
       });
-      const data = (await res.json()) as SearchTextResponse;
-      if (!res.ok) {
-        throw new Error(`${res.status} ${data.error?.message ?? 'Places API error'}`);
-      }
-      const results: PlaceCandidate[] = (data.places ?? []).slice(0, 8).map((p, i) => ({
-        placeId: p.id ?? `unknown-${sampleIndex}-${i}`,
-        name: p.displayName?.text ?? 'Unknown place',
-        category: inferCategory(keyword, p.types ?? []),
-        rating: p.rating,
-        reviewCount: p.userRatingCount,
-        priceLevel: p.priceLevel ? PRICE_LEVEL_MAP[p.priceLevel] : undefined,
-        location: {
-          lat: p.location?.latitude ?? point.lat,
-          lng: p.location?.longitude ?? point.lng,
-        },
-      }));
-      await this.cache.set(cacheKey, results, 6 * 3600);
-      return results;
     } catch (err) {
       this.logger.warn(`Places search failed: ${googleErrorDetail(err)} — using mock places`);
       return mockPlacesNear(point, keyword, sampleIndex);

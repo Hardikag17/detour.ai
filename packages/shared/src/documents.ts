@@ -43,32 +43,6 @@ export const PLAN_TRIP_SUBSCRIPTION = /* GraphQL */ `
           text
         }
       }
-      ... on StopUpdatedEvent {
-        id
-        change
-        reason
-        stop {
-          id
-          placeId
-          name
-          category
-          rating
-          reviewCount
-          priceLevel
-          location {
-            lat
-            lng
-          }
-          detourKm
-          detourMin
-          tier
-          legLabel
-          why {
-            icon
-            text
-          }
-        }
-      }
       ... on PlanSummaryEvent {
         planId
         summary
@@ -77,6 +51,58 @@ export const PLAN_TRIP_SUBSCRIPTION = /* GraphQL */ `
       ... on PlanErrorEvent {
         message
         code
+      }
+    }
+  }
+`;
+
+export const RECENT_TRIPS_QUERY = /* GraphQL */ `
+  query RecentTrips($limit: Int) {
+    recentTrips(limit: $limit) {
+      id
+      prompt
+      originName
+      destinationName
+      distanceKm
+      polyline
+      stops {
+        id
+      }
+    }
+  }
+`;
+
+export const SAVED_TRIP_QUERY = /* GraphQL */ `
+  query SavedTrip($id: ID!) {
+    trip(id: $id) {
+      id
+      prompt
+      originName
+      destinationName
+      distanceKm
+      durationMin
+      summary
+      polyline
+      stops {
+        id
+        placeId
+        name
+        category
+        rating
+        reviewCount
+        priceLevel
+        location {
+          lat
+          lng
+        }
+        detourKm
+        detourMin
+        tier
+        legLabel
+        why {
+          icon
+          text
+        }
       }
     }
   }

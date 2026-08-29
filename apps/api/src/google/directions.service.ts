@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { CACHE_TTL_S } from '../config';
 import { RedisCacheService } from '../cache/redis-cache.service';
 import { Point } from './geo.util';
-import { googleErrorDetail } from './geocoding.service';
+import { googleErrorDetail, googleFetch } from './google-fetch';
 import { mockRoute } from './mock-data';
 
 export interface RouteResult {
@@ -16,7 +17,6 @@ interface ComputeRoutesResponse {
     duration?: string;
     polyline?: { encodedPolyline?: string };
   }>;
-  error?: { message?: string };
 }
 
 /**
@@ -30,58 +30,41 @@ export class DirectionsService {
 
   constructor(private readonly cache: RedisCacheService) {}
 
-  get isLive(): boolean {
-    return Boolean(this.apiKey);
-  }
-
   async route(
     origin: Point,
     destination: Point,
     opts: { avoidTolls?: boolean } = {},
   ): Promise<RouteResult> {
-    if (!this.apiKey) {
-      return mockRoute(origin, destination);
-    }
-    const cacheKey = `route:${origin.lat.toFixed(4)},${origin.lng.toFixed(4)}:${destination.lat.toFixed(4)},${destination.lng.toFixed(4)}:${opts.avoidTolls ? 'nt' : 't'}`;
-    const cached = await this.cache.get<RouteResult>(cacheKey);
-    if (cached) return cached;
+    if (!this.apiKey) return mockRoute(origin, destination);
+
+    const key = `route:${pt(origin)}:${pt(destination)}:${opts.avoidTolls ? 'nt' : 't'}`;
     try {
-      const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Goog-Api-Key': this.apiKey,
-          'X-Goog-FieldMask':
-            'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline',
-        },
-        body: JSON.stringify({
-          origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
-          destination: {
-            location: { latLng: { latitude: destination.lat, longitude: destination.lng } },
+      return await this.cache.wrap(key, CACHE_TTL_S.ROUTE, async () => {
+        const data = await googleFetch<ComputeRoutesResponse>(
+          'https://routes.googleapis.com/directions/v2:computeRoutes',
+          this.apiKey!,
+          'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline',
+          {
+            origin: latLng(origin),
+            destination: latLng(destination),
+            travelMode: 'DRIVE',
+            ...(opts.avoidTolls ? { routeModifiers: { avoidTolls: true } } : {}),
           },
-          travelMode: 'DRIVE',
-          ...(opts.avoidTolls ? { routeModifiers: { avoidTolls: true } } : {}),
-        }),
-        signal: AbortSignal.timeout(10_000),
+        );
+        const route = data.routes?.[0];
+        if (!route?.polyline?.encodedPolyline) return mockRoute(origin, destination);
+        return {
+          polyline: route.polyline.encodedPolyline,
+          distanceKm: Math.round((route.distanceMeters ?? 0) / 1000),
+          durationMin: Math.round(Number.parseInt(route.duration ?? '0', 10) / 60),
+        };
       });
-      const data = (await res.json()) as ComputeRoutesResponse;
-      if (!res.ok) {
-        throw new Error(`${res.status} ${data.error?.message ?? 'Routes API error'}`);
-      }
-      const route = data.routes?.[0];
-      const polyline = route?.polyline?.encodedPolyline;
-      if (!route || !polyline) return mockRoute(origin, destination);
-      const durationSec = Number.parseInt(route.duration ?? '0', 10);
-      const result: RouteResult = {
-        polyline,
-        distanceKm: Math.round((route.distanceMeters ?? 0) / 1000),
-        durationMin: Math.round(durationSec / 60),
-      };
-      await this.cache.set(cacheKey, result, 24 * 3600); // traffic-free routes are stable for a day
-      return result;
     } catch (err) {
       this.logger.warn(`Routes API failed: ${googleErrorDetail(err)} — using mock route`);
       return mockRoute(origin, destination);
     }
   }
 }
+
+const pt = (p: Point) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`;
+const latLng = (p: Point) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });

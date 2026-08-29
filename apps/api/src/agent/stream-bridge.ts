@@ -5,6 +5,7 @@ import {
   StepEvent,
   StopEvent,
 } from '../graphql/types/plan.types';
+import { make } from '../util/make';
 import { RunContext } from './run-context';
 
 interface StreamPart {
@@ -90,48 +91,29 @@ export async function* bridgeStream(
     }
   }
 
-  const summary = new PlanSummaryEvent();
-  summary.planId = planId;
-  summary.summary = summaryText.trim() || 'Your plan is ready — every stop has its reasons below.';
-  summary.stopCount = stopCount;
-  yield summary;
+  yield make(PlanSummaryEvent, {
+    planId,
+    summary: summaryText.trim() || 'Your plan is ready — every stop has its reasons below.',
+    stopCount,
+  });
 }
 
 export function step(id: string, label: string, status: 'active' | 'done'): StepEvent {
-  const e = new StepEvent();
-  e.id = id;
-  e.label = label;
-  e.status = status;
-  return e;
+  return make(StepEvent, { id, label, status });
 }
 
 export function routeEvent(ctx: RunContext): RouteEvent {
-  const r = ctx.route!;
-  const e = new RouteEvent();
-  e.polyline = r.polyline;
-  e.origin = r.origin;
-  e.destination = r.destination;
-  e.originName = r.originName;
-  e.destinationName = r.destinationName;
-  e.distanceKm = r.distanceKm;
-  e.durationMin = r.durationMin;
-  return e;
+  // RouteInfo carries everything RouteEvent needs (plus `path`, which GraphQL ignores).
+  return make(RouteEvent, ctx.route!);
 }
 
 export function stopEvent(s: Record<string, unknown>, index: number): StopEvent {
-  const e = new StopEvent();
-  e.id = `stop-${index}-${s.placeId}`;
-  e.placeId = String(s.placeId);
-  e.name = String(s.name);
-  e.category = String(s.category ?? 'other');
-  e.rating = s.rating as number | undefined;
-  e.reviewCount = s.reviewCount as number | undefined;
-  e.priceLevel = s.priceLevel as number | undefined;
-  e.location = s.location as { lat: number; lng: number };
-  e.detourKm = Number(s.detourKm ?? 0);
-  e.detourMin = s.detourMin as number | undefined;
-  e.tier = String(s.tier ?? 'primary');
-  e.legLabel = s.legLabel as string | undefined;
-  e.why = (s.why as Array<{ icon: string; text: string }>) ?? [];
-  return e;
+  return make(StopEvent, {
+    ...(s as Partial<StopEvent>),
+    id: `stop-${index}-${s.placeId}`,
+    category: String(s.category ?? 'other'),
+    detourKm: Number(s.detourKm ?? 0),
+    tier: String(s.tier ?? 'primary'),
+    why: (s.why as StopEvent['why']) ?? [],
+  });
 }

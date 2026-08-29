@@ -1,18 +1,17 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { PLAN_TRIP_SUBSCRIPTION, type PlanEvent, type PlanTripInput } from '@detour/shared';
+import { useQueryClient } from '@tanstack/react-query';
+import { PLAN_TRIP_SUBSCRIPTION, type PlanTripInput } from '@detour/shared';
+import type { PlanFrame } from '@detour/shared/helpers/interfaces';
+import { gqlSubscribe } from '@/lib/api';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/graphql';
-
-/**
- * Opens the planTrip GraphQL subscription over SSE (POST + text/event-stream,
- * served natively by GraphQL Yoga) and dispatches each PlanEvent into the store.
- */
+/** Streams the planTrip subscription and dispatches each event into the store. */
 export function usePlanTrip() {
   const abortRef = useRef<AbortController | null>(null);
+  const queryClient = useQueryClient();
 
   const planTrip = useCallback(async (promptOverride?: string, refine = false) => {
     const { prompt, detourKm, sessionId } = useUiStore.getState();
@@ -32,79 +31,48 @@ export function usePlanTrip() {
     };
 
     plan.start();
-
     try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify({
-          query: PLAN_TRIP_SUBSCRIPTION,
-          variables: { input },
-        }),
-      });
-
-      if (!res.ok || !res.body) {
-        throw new Error(`API responded ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        // SSE frames are separated by a blank line.
-        const frames = buffer.split('\n\n');
-        buffer = frames.pop() ?? '';
-        for (const frame of frames) {
-          const dataLines = frame
-            .split('\n')
-            .filter((l) => l.startsWith('data:'))
-            .map((l) => l.slice(5).trim())
-            .filter(Boolean);
-          if (dataLines.length === 0) continue;
-          try {
-            const payload = JSON.parse(dataLines.join('\n'));
-            const event = payload?.data?.planTrip as PlanEvent | undefined;
-            if (event) usePlanStore.getState().dispatch(event);
-            if (payload?.errors?.length) {
-              usePlanStore.getState().fail(payload.errors[0]?.message ?? 'Planning failed');
-            }
-          } catch {
-            // Ignore non-JSON keepalive frames.
-          }
+      const frames = gqlSubscribe<PlanFrame>(
+        PLAN_TRIP_SUBSCRIPTION,
+        { input },
+        controller.signal,
+      );
+      for await (const frame of frames) {
+        const event = frame.data?.planTrip;
+        if (event) usePlanStore.getState().dispatch(event);
+        if (frame.errors?.length) {
+          usePlanStore.getState().fail(frame.errors[0]?.message ?? 'Planning failed');
         }
       }
-
-      // Stream ended without a summary event → surface as ready anyway if we got stops.
-      const st = usePlanStore.getState();
-      if (st.status === 'streaming') {
-        if (st.stops.length > 0) {
-          st.dispatch({
-            __typename: 'PlanSummaryEvent',
-            planId: st.planId ?? 'plan',
-            summary: 'Plan ready.',
-            stopCount: st.stops.length,
-          });
-        } else {
-          st.fail('The stream ended before a plan was produced.');
-        }
-      }
+      finishIfStreamEndedEarly();
+      // The API saves the plan right after the stream closes — give it a beat,
+      // then refresh the sidebar's recent-trips list.
+      setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: ['recentTrips'] });
+      }, 1000);
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         usePlanStore.getState().fail((err as Error).message);
       }
     }
-  }, []);
+  }, [queryClient]);
 
   const cancel = useCallback(() => abortRef.current?.abort(), []);
-
   return { planTrip, cancel };
+}
+
+/** Stream closed without a summary event → mark done if we got stops, else fail. */
+function finishIfStreamEndedEarly() {
+  const st = usePlanStore.getState();
+  if (st.status !== 'streaming') return;
+  if (st.stops.length === 0) {
+    st.fail('The stream ended before a plan was produced.');
+    return;
+  }
+  st.dispatch({
+    __typename: 'PlanSummaryEvent',
+    planId: st.planId ?? 'plan',
+    summary: 'Plan ready.',
+    stopCount: st.stops.length,
+  });
 }

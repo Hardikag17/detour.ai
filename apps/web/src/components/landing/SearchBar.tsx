@@ -2,26 +2,14 @@
 
 import { useState } from 'react';
 import { Icon } from '@/lib/icons';
-import { RecentTrips } from '@/components/landing/RecentTrips';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
-
-const TRY_CHIPS: Array<{ icon: string; label: string; prompt: string }> = [
-  {
-    icon: 'coffee',
-    label: 'Cafés + stops en route to Varkala',
-    prompt:
-      'Driving Kochi to Varkala. Find famous cafés on the way and a couple of scenic stops worth pulling over for.',
-  },
-  {
-    icon: 'tent',
-    label: 'Where to break the Goa drive',
-    prompt:
-      'Driving Bangalore to Goa. I want a pet-friendly café for breakfast, one waterfall that is not crowded, and a hotel close to the destination under 4k.',
-  },
-];
-
-const PLACEHOLDER = 'Famous cafés on the way to Varkala beach…';
+import {
+  DEFAULT_RECOMMENDATIONS,
+  DETOUR,
+  REFINE_PLACEHOLDER,
+  SEARCHBAR_PLACEHOLDER,
+} from '@detour/shared/helpers/constants';
 
 interface SearchBarProps {
   onSubmit: (prompt: string, refine: boolean) => void;
@@ -41,17 +29,11 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pt-9 pb-4 text-center">
-      {/* Recent trips (Postgres-backed) + Try suggestions */}
+    <div className="pointer-events-none fixed right-0 bottom-0 z-40 bg-gradient-to-t from-white via-white/95 to-transparent px-5 pt-9 pb-4 text-center left-[var(--sidebar-w)] lg:pb-8">
       {status === 'idle' && (
-        <div className="pointer-events-auto">
-          <RecentTrips />
-        </div>
-      )}
-      {status === 'idle' && (
-        <div className="pointer-events-auto mb-2.5 flex flex-wrap items-center justify-center gap-1.5">
-          <span className="text-[10.5px] text-[#a2a6b4]">Try</span>
-          {TRY_CHIPS.map((chip) => (
+        <div className="pointer-events-auto mb-2.5 flex flex-wrap items-center justify-center gap-1.5 lg:mb-3.5 lg:gap-2">
+          <span className="text-[10.5px] text-[#a2a6b4] lg:text-[13.5px]">Try</span>
+          {DEFAULT_RECOMMENDATIONS.map((chip) => (
             <button
               key={chip.label}
               type="button"
@@ -59,7 +41,7 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
                 setPrompt(chip.prompt);
                 onSubmit(chip.prompt, false);
               }}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-[14px] border border-[#e6e8ef] bg-white/90 px-2.5 py-1 text-[11px] text-[#585c6c] backdrop-blur-sm transition hover:border-[#9db4ff] hover:text-[#2b6bff]"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-[16px] border border-[#e6e8ef] bg-white/90 px-2.5 py-1 text-[11px] text-[#585c6c] backdrop-blur-sm transition hover:border-[#9db4ff] hover:text-[#2b6bff] lg:px-5 lg:py-2.5 lg:text-[15px]"
             >
               <Icon name={chip.icon} size={12} />
               {chip.label}
@@ -69,7 +51,7 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
       )}
 
       {/* The search bar */}
-      <div className="pointer-events-auto relative mx-auto flex max-w-[560px] items-center gap-2 rounded-xl border border-[#e0e4ee] bg-white py-1.5 pr-1.5 pl-3.5 shadow-[0_10px_30px_rgba(43,107,255,0.14)]">
+      <div className="pointer-events-auto relative mx-auto flex max-w-[560px] items-center gap-2 rounded-xl border border-[#e0e4ee] bg-white py-1.5 pr-1.5 pl-3.5 shadow-[0_10px_30px_rgba(43,107,255,0.14)] lg:max-w-[960px] lg:gap-3 lg:rounded-2xl lg:py-4 lg:pr-2.5 lg:pl-6">
         {canRefine ? (
           <Icon name="message" size={15} className="shrink-0 text-[#a2a6b4]" />
         ) : (
@@ -79,9 +61,9 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
-          placeholder={canRefine ? 'Refine it — "make it vegetarian, avoid tolls"…' : PLACEHOLDER}
+          placeholder={canRefine ? REFINE_PLACEHOLDER : SEARCHBAR_PLACEHOLDER}
           disabled={streaming}
-          className="min-w-0 flex-1 bg-transparent text-left text-[13px] text-[#0c0e14] outline-none placeholder:text-[#9a9dab] disabled:opacity-60"
+          className="min-w-0 flex-1 bg-transparent text-left text-[13px] text-[#0c0e14] outline-none placeholder:text-[#9a9dab] disabled:opacity-60 lg:text-lg"
         />
 
         {/* Detour pill + popover slider */}
@@ -89,7 +71,7 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
           <button
             type="button"
             onClick={() => setDetourOpen((v) => !v)}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-[20px] border border-[#e6e8ef] bg-[#f4f5f9] px-2 py-1 text-[11px] text-[#42465a] transition hover:border-[#9db4ff]"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-[20px] border border-[#e6e8ef] bg-[#f4f5f9] px-2 py-1 text-[11px] text-[#42465a] transition hover:border-[#9db4ff] lg:px-4 lg:py-2 lg:text-[15px]"
           >
             <Icon name="detour" size={12} className="text-[#2b6bff]" />
             {detourKm}km
@@ -100,13 +82,15 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
                 <span className="text-[11px] text-[#565b6b]">Willing to detour</span>
                 <span className="text-xs font-medium text-[#0c0e14]">
                   {detourKm} km{' '}
-                  <span className="font-normal text-[#9a9dab]">· shows up to {detourKm * 2}</span>
+                  <span className="font-normal text-[#9a9dab]">
+                    · shows up to {detourKm * DETOUR.STRETCH_MULTIPLIER}
+                  </span>
                 </span>
               </div>
               <input
                 type="range"
-                min={1}
-                max={20}
+                min={DETOUR.MIN_KM}
+                max={DETOUR.MAX_KM}
                 step={1}
                 value={detourKm}
                 onChange={(e) => setDetourKm(Number(e.target.value))}
@@ -121,7 +105,7 @@ export function SearchBar({ onSubmit }: SearchBarProps) {
           onClick={submit}
           disabled={streaming || !prompt.trim()}
           aria-label="Plan my trip"
-          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#2b6bff] to-[#6a5cff] shadow-[0_3px_10px_rgba(43,107,255,0.4)] transition hover:brightness-110 disabled:opacity-50"
+          className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-[#2b6bff] to-[#6a5cff] shadow-[0_3px_10px_rgba(43,107,255,0.4)] transition hover:brightness-110 disabled:opacity-50 lg:h-12 lg:w-12"
         >
           {streaming ? (
             <Icon name="loader" size={14} className="spin text-white" />

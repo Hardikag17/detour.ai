@@ -9,6 +9,7 @@ import {
 import { DirectionsService } from '../google/directions.service';
 import { GeocodingService } from '../google/geocoding.service';
 import { PlacesService } from '../google/places.service';
+import { AGENT, ROUTE } from '../config';
 import { CandidateWithGeo, RunContext } from './run-context';
 
 export interface AgentServices {
@@ -109,7 +110,7 @@ export function buildTools(services: AgentServices, ctx: RunContext) {
         const segment = path.slice(startIdx, endIdx + 1);
         if (segment.length < 2) return { error: 'Leg segment too short.' };
 
-        const samples = samplePath(segment, 20, 6);
+        const samples = samplePath(segment, ROUTE.SAMPLE_INTERVAL_KM, ROUTE.MAX_SAMPLES_PER_LEG);
         const radiusM = ctx.maxDetourKm * 1000;
         const perSample = await Promise.all(
           samples.map((pt, i) => services.places.searchNear(pt, keyword, radiusM, startIdx + i)),
@@ -127,7 +128,7 @@ export function buildTools(services: AgentServices, ctx: RunContext) {
             const enriched: CandidateWithGeo = {
               ...cand,
               detourKm,
-              detourMin: Math.max(1, Math.round((detourKm / 40) * 60 * 2)),
+              detourMin: Math.max(1, Math.round((detourKm / ROUTE.DETOUR_SPEED_KMH) * 60 * 2)),
               tier: detourKm <= ctx.detourKm ? 'primary' : 'stretch',
               fraction: round3(fraction),
             };
@@ -139,17 +140,9 @@ export function buildTools(services: AgentServices, ctx: RunContext) {
         return {
           need,
           keyword,
-          candidates: out.slice(0, 8).map((c) => ({
-            placeId: c.placeId,
-            name: c.name,
-            category: c.category,
-            rating: c.rating,
-            reviewCount: c.reviewCount,
-            priceLevel: c.priceLevel,
-            detourKm: c.detourKm,
-            detourMin: c.detourMin,
-            tier: c.tier,
-            fraction: c.fraction,
+          // Strip `location` (noise for the LLM); everything else goes through as-is.
+          candidates: out.slice(0, AGENT.MAX_CANDIDATES_PER_NEED).map(({ location: _location, ...c }) => ({
+            ...c,
             etaLabel: etaLabel(durationMin, c.fraction),
           })),
         };
@@ -181,27 +174,19 @@ export function buildTools(services: AgentServices, ctx: RunContext) {
       }),
       execute: async ({ stops }) => {
         if (!ctx.route) return { error: 'Call getRoute first.' };
-        const resolved = [];
-        for (const pick of stops) {
-          const cand = ctx.candidates.get(pick.placeId);
-          if (!cand) continue;
-          resolved.push({
-            placeId: cand.placeId,
-            name: cand.name,
-            category: cand.category,
-            rating: cand.rating,
-            reviewCount: cand.reviewCount,
-            priceLevel: cand.priceLevel,
-            location: cand.location,
-            detourKm: cand.detourKm,
-            detourMin: cand.detourMin,
-            tier: cand.tier,
-            fraction: cand.fraction,
-            legLabel: `${pick.legLabel} · ${etaLabel(ctx.route.durationMin, cand.fraction)}`,
-            why: pick.why,
-          });
-        }
-        resolved.sort((a, b) => a.fraction - b.fraction);
+        const durationMin = ctx.route.durationMin;
+        const resolved = stops
+          .map((pick) => {
+            const cand = ctx.candidates.get(pick.placeId);
+            if (!cand) return null;
+            return {
+              ...cand,
+              legLabel: `${pick.legLabel} · ${etaLabel(durationMin, cand.fraction)}`,
+              why: pick.why,
+            };
+          })
+          .filter((s) => s !== null)
+          .sort((a, b) => a.fraction - b.fraction);
         return { stops: resolved, count: resolved.length };
       },
     }),

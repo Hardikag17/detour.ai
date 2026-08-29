@@ -2,17 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/lib/icons';
-
-const ROTATING = [
-  'hidden gems.',
-  'local favorites.',
-  'scenic detours.',
-  'chai stops.',
-  'roadside dhabas.',
-  'chai-sutta breaks.',
-  'worthwhile detours.',
-  'unforgettable views.',
-];
+import { ROTATING_WORDS as ROTATING } from '@detour/shared/helpers/constants';
 
 export function Tagline() {
   const [wordIdx, setWordIdx] = useState(0);
@@ -33,23 +23,26 @@ export function Tagline() {
   }, []);
 
   return (
-    <div className="relative z-[3] pt-8 text-center md:pt-10">
-      <div className="mb-3.5 inline-flex items-center gap-1.5">
+    <div className="relative z-[3] pt-10 text-center md:pt-16 xl:pt-20">
+      {/* Brand lives in the sidebar on desktop; keep it visible on mobile */}
+      <div className="mb-3.5 inline-flex items-center gap-1.5 md:hidden">
         <div className="flex h-[23px] w-[23px] items-center justify-center rounded-[7px] bg-gradient-to-br from-[#2b6bff] to-[#6a5cff] shadow-[0_3px_9px_rgba(43,107,255,0.35)]">
           <Icon name="route" size={13} className="text-white" />
         </div>
         <span className="text-sm font-medium text-[#12141c]">detour.ai</span>
       </div>
+      <div className='flex px-16 flex-col text-left content-start'>
+        <h1 className=" mb-3 font-bold text-[44px] leading-[1.16] tracking-[-0.6px] text-[#080a10] md:text-[48px] xl:mb-6 xl:text-[68px] xl:tracking-[-1.8px]">
+          Don&apos;t just get there
+          <br />
+          Explorrrrrrrr<br /> <span className="grad-text">everything in between</span>
+        </h1>
+        <p className="text-[14px] font-bold leading-normal whitespace-nowrap text-[#565b6b] md:text-xl xl:text-[18px]">
+          Tell us where you&apos;re going. We&apos;ll find{' '}
+          <span className={`rot-word font-medium ${out ? 'out' : ''}`}>{ROTATING?.[wordIdx]}</span>
+        </p>
+      </div>
 
-      <h1 className="mx-auto mb-2 text-[26px] leading-[1.2] font-medium tracking-[-0.4px] text-[#080a10] md:text-[30px]">
-        Don&apos;t just get there.
-        <br />
-        Discover <span className="grad-text">everything in between.</span>
-      </h1>
-      <p className="mx-auto text-[13px] leading-normal whitespace-nowrap text-[#565b6b] md:text-sm">
-        Tell us where you&apos;re going. We&apos;ll find{' '}
-        <span className={`rot-word font-medium ${out ? 'out' : ''}`}>{ROTATING[wordIdx]}</span>
-      </p>
     </div>
   );
 }

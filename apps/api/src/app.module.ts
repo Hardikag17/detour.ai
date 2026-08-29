@@ -7,7 +7,6 @@ import { AgentModule } from './agent/agent.module';
 import { CacheModule } from './cache/cache.module';
 import { GoogleModule } from './google/google.module';
 import { MemoryModule } from './memory/memory.module';
-import { PlacesResolver } from './graphql/places.resolver';
 import { PlanResolver } from './graphql/plan.resolver';
 import { StopEntity, TripEntity } from './trips/trip.entity';
 import { TripsModule } from './trips/trips.module';
@@ -39,6 +38,6 @@ const dbImports = process.env.DATABASE_URL
     MemoryModule,
     ...dbImports,
   ],
-  providers: [PlanResolver, PlacesResolver],
+  providers: [PlanResolver],
 })
 export class AppModule {}

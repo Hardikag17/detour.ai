@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import type { PlanEvent, PlanSummaryEvent, RouteEvent, StepEvent, StopEvent } from '@detour/shared';
+import type { PlanStatus, SavedTripDetail } from '@detour/shared/helpers/interfaces';
+import { decodePolyline } from '@/lib/polyline';
 
-export type PlanStatus = 'idle' | 'streaming' | 'ready' | 'error';
+export type { PlanStatus };
 
 interface PlanState {
   status: PlanStatus;
@@ -13,6 +15,7 @@ interface PlanState {
   planId: string | null;
   start: () => void;
   dispatch: (event: PlanEvent) => void;
+  hydrate: (trip: SavedTripDetail) => void;
   fail: (message: string) => void;
   reset: () => void;
 }
@@ -43,16 +46,6 @@ export const usePlanStore = create<PlanState>((set) => ({
           return { route: event };
         case 'StopEvent':
           return { stops: [...state.stops, event] };
-        case 'StopUpdatedEvent': {
-          if (event.change === 'removed') {
-            return { stops: state.stops.filter((s) => s.id !== event.id) };
-          }
-          if (event.stop) {
-            const stops = state.stops.filter((s) => s.id !== event.id);
-            return { stops: [...stops, event.stop] };
-          }
-          return {};
-        }
         case 'PlanSummaryEvent':
           return { summary: event, planId: event.planId, status: 'ready' };
         case 'PlanErrorEvent':
@@ -61,6 +54,39 @@ export const usePlanStore = create<PlanState>((set) => ({
           return {};
       }
     }),
+
+  /** Restore a saved plan from Postgres — no agent run, straight to 'ready'. */
+  hydrate: (trip) => {
+    if (!trip.polyline) return;
+    const path = decodePolyline(trip.polyline);
+    if (path.length < 2) return;
+    const route: RouteEvent = {
+      __typename: 'RouteEvent',
+      polyline: trip.polyline,
+      origin: path[0],
+      destination: path[path.length - 1],
+      originName: trip.originName,
+      destinationName: trip.destinationName,
+      distanceKm: trip.distanceKm,
+      durationMin: trip.durationMin,
+    };
+    set({
+      status: 'ready',
+      error: null,
+      planId: trip.id,
+      route,
+      stops: trip.stops.map((s) => ({ ...s, __typename: 'StopEvent' as const })),
+      steps: [
+        { __typename: 'StepEvent', id: 'loaded', label: 'Loaded from your recent trips', status: 'done' },
+      ],
+      summary: {
+        __typename: 'PlanSummaryEvent',
+        planId: trip.id,
+        summary: trip.summary ?? 'Your saved plan — every stop has its reasons below.',
+        stopCount: trip.stops.length,
+      },
+    });
+  },
 
   fail: (message) => set({ error: message, status: 'error' }),
 

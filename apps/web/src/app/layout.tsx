@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Cascadia_Mono, Satisfy } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const cascadia = Cascadia_Mono({ subsets: ['latin'], variable: '--font-cascadia' });
+const satisfy = Satisfy({ subsets: ['latin'], weight: '400', variable: '--font-satisfy' });
 
 export const metadata: Metadata = {
   title: 'detour.ai — Discover everything in between',
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${cascadia.variable} ${satisfy.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>
