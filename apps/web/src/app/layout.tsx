@@ -8,6 +8,7 @@ const satisfy = Satisfy({ subsets: ['latin'], weight: '400', variable: '--font-s
 
 export const metadata: Metadata = {
   title: 'detour.ai — Discover everything in between',
+  icons: { icon: '/assets/logo.svg' },
   description:
     "Tell us where you're going. We'll find the reasons to stop — cafés, dhabas, waterfalls, forts and stays along your route.",
 };

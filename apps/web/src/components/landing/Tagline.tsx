@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from '@/lib/icons';
 import { ROTATING_WORDS as ROTATING } from '@detour/shared/helpers/constants';
 
 export function Tagline() {
@@ -26,9 +25,8 @@ export function Tagline() {
     <div className="relative z-[3] pt-10 text-center md:pt-16 xl:pt-20">
       {/* Brand lives in the sidebar on desktop; keep it visible on mobile */}
       <div className="mb-3.5 inline-flex items-center gap-1.5 md:hidden">
-        <div className="flex h-[23px] w-[23px] items-center justify-center rounded-[7px] bg-gradient-to-br from-[#2b6bff] to-[#6a5cff] shadow-[0_3px_9px_rgba(43,107,255,0.35)]">
-          <Icon name="route" size={13} className="text-white" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/assets/logo.svg" alt="" className="h-[23px] w-[23px] rounded-[7px] shadow-[0_3px_9px_rgba(43,107,255,0.35)]" />
         <span className="text-sm font-medium text-[#12141c]">detour.ai</span>
       </div>
       <div className='flex px-16 flex-col text-left content-start'>

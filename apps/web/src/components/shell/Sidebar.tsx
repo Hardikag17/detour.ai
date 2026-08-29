@@ -46,9 +46,8 @@ export function Sidebar() {
   return (
     <aside className="fixed top-0 left-0 z-50 hidden h-dvh w-[var(--sidebar-w)] flex-col border-r border-[#ececf1] bg-[#fbfbfd] px-3.5 py-4 md:flex xl:px-6 xl:py-7">
       <div className="mb-4 flex items-center gap-2.5 px-1 xl:mb-7">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#2b6bff] to-[#6a5cff] shadow-[0_3px_9px_rgba(43,107,255,0.35)] xl:h-10 xl:w-10">
-          <Icon name="route" size={16} className="text-white" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/assets/logo.svg" alt="" className="h-7 w-7 shadow-[0_3px_9px_rgba(43,107,255,0.35)] rounded-lg xl:h-10 xl:w-10" />
         <span className="text-[15px] font-medium text-[#12141c] xl:text-[19px]">detour.ai</span>
       </div>
 

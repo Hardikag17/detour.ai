@@ -14,9 +14,8 @@ export function ResultsPanel({ onNewTrip }: { onNewTrip: () => void }) {
     <div className="mx-auto w-full max-w-[640px] px-4 pt-4 pb-36">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <div className="flex h-[21px] w-[21px] items-center justify-center rounded-md bg-gradient-to-br from-[#2b6bff] to-[#6a5cff]">
-            <Icon name="route" size={12} className="text-white" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logo.svg" alt="" className="h-[21px] w-[21px] rounded-md" />
           <span className="text-[13px] font-medium text-[#12141c]">detour.ai</span>
           {stops.length > 0 && (
             <span className="ml-1 text-xs text-[#8a8e9c]">
