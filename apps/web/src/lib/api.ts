@@ -4,6 +4,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL;
 
 /** One-shot GraphQL query/mutation. */
 export async function gqlRequest<T>(query: string, variables?: object): Promise<T> {
+  console.log({ query, variables })
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -24,6 +25,7 @@ export async function* gqlSubscribe<T>(
   variables: object,
   signal: AbortSignal,
 ): AsyncGenerator<T> {
+  console.log(API_URL, query, variables, signal)
   const res = await fetch(API_URL, {
     method: 'POST',
     signal,

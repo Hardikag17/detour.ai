@@ -11,7 +11,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,graphql}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json,graphql}\"",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "codegen": "pnpm --filter @detour/shared codegen"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

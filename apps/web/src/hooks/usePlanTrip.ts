@@ -2,11 +2,17 @@
 
 import { useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { PLAN_TRIP_SUBSCRIPTION, type PlanTripInput } from '@detour/shared';
-import type { PlanFrame } from '@detour/shared/helpers/interfaces';
+import { PLAN_TRIP_SUBSCRIPTION, type PlanEvent, type PlanTripInput } from '@detour/shared';
+import type { PlanTripSubscription } from '@detour/shared/generated/graphql';
 import { gqlSubscribe } from '@/lib/api';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
+
+/** One SSE frame: generated subscription payload + GraphQL's standard errors array. */
+interface PlanFrame {
+  data?: PlanTripSubscription;
+  errors?: Array<{ message?: string }>;
+}
 
 /** Streams the planTrip subscription and dispatches each event into the store. */
 export function usePlanTrip() {
@@ -39,7 +45,8 @@ export function usePlanTrip() {
       );
       for await (const frame of frames) {
         const event = frame.data?.planTrip;
-        if (event) usePlanStore.getState().dispatch(event);
+        // Store domain types are narrower than schema-wide generated ones (literal unions).
+        if (event) usePlanStore.getState().dispatch(event as PlanEvent);
         if (frame.errors?.length) {
           usePlanStore.getState().fail(frame.errors[0]?.message ?? 'Planning failed');
         }

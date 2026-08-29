@@ -69,6 +69,7 @@ Every recommendation defends itself:
 | Agent | Vercel AI SDK with Gemini (Claude via one env var) |
 | Maps data | Google Routes API, Places API (New), Geocoding API |
 | Backend | NestJS, GraphQL Yoga (subscriptions over SSE), TypeORM |
+| Contract | Code-first schema (Nest decorators → `schema.gql`) + GraphQL Codegen for frontend types |
 | Frontend | Next.js 15, React Query, Zustand, Tailwind CSS |
 | Map | Leaflet + OpenStreetMap tiles (no key required) |
 | Storage | PostgreSQL for saved trips, Redis for API-response caching |
@@ -90,6 +91,12 @@ pnpm dev
 ```
 
 Web starts on `http://localhost:3000`, API with GraphiQL on `http://localhost:4000/graphql`.
+
+The FE/BE contract is fully generated — no hand-maintained type copies: the API writes `schema.gql` from its decorated classes on every boot, and `pnpm codegen` validates the query documents against it and emits the frontend types (a typo'd field fails the build, not the user). Run it after changing the schema or any query:
+
+```bash
+pnpm codegen
+```
 
 The app works with no keys at all (demo mode: same UI, scripted agent, mock places). For live data, create `apps/api/.env`:
 

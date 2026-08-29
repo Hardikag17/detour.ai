@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import type { PlanEvent, PlanSummaryEvent, RouteEvent, StepEvent, StopEvent } from '@detour/shared';
-import type { PlanStatus, SavedTripDetail } from '@detour/shared/helpers/interfaces';
+import type { PlanStatus } from '@detour/shared/helpers/interfaces';
+import type { SavedTripQuery } from '@detour/shared/generated/graphql';
 import { decodePolyline } from '@/lib/polyline';
 
 export type { PlanStatus };
+
+/** The saved plan as the trip(id) query returns it — codegen keeps this in lockstep with the schema. */
+type SavedTrip = NonNullable<SavedTripQuery['trip']>;
 
 interface PlanState {
   status: PlanStatus;
@@ -15,7 +19,7 @@ interface PlanState {
   planId: string | null;
   start: () => void;
   dispatch: (event: PlanEvent) => void;
-  hydrate: (trip: SavedTripDetail) => void;
+  hydrate: (trip: SavedTrip) => void;
   fail: (message: string) => void;
   reset: () => void;
 }
@@ -75,7 +79,8 @@ export const usePlanStore = create<PlanState>((set) => ({
       error: null,
       planId: trip.id,
       route,
-      stops: trip.stops.map((s) => ({ ...s, __typename: 'StopEvent' as const })),
+      // Generated types are schema-wide (icon: string); the store's domain types are narrower.
+      stops: trip.stops.map((s) => ({ ...s, __typename: 'StopEvent' as const })) as StopEvent[],
       steps: [
         { __typename: 'StepEvent', id: 'loaded', label: 'Loaded from your recent trips', status: 'done' },
       ],

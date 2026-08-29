@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RECENT_TRIPS_QUERY, SAVED_TRIP_QUERY } from '@detour/shared';
-import type { RecentTrip, SavedTripDetail } from '@detour/shared/helpers/interfaces';
+import type { RecentTripsQuery, SavedTripQuery } from '@detour/shared/generated/graphql';
 import { gqlRequest } from '@/lib/api';
 import { Icon } from '@/lib/icons';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
 
+type RecentTrip = RecentTripsQuery['recentTrips'][number];
+
 async function fetchRecentTrips(): Promise<RecentTrip[]> {
-  const data = await gqlRequest<{ recentTrips?: RecentTrip[] }>(RECENT_TRIPS_QUERY, { limit: 8 });
+  const data = await gqlRequest<RecentTripsQuery>(RECENT_TRIPS_QUERY, { limit: 20 });
   return data.recentTrips ?? [];
 }
 
@@ -34,7 +36,7 @@ export function Sidebar() {
     if (!trip.polyline) return;
     setLoadingId(trip.id);
     try {
-      const data = await gqlRequest<{ trip?: SavedTripDetail }>(SAVED_TRIP_QUERY, { id: trip.id });
+      const data = await gqlRequest<SavedTripQuery>(SAVED_TRIP_QUERY, { id: trip.id });
       if (data.trip) usePlanStore.getState().hydrate(data.trip);
     } catch {
       /* leave the prefilled prompt as the fallback */
@@ -62,9 +64,8 @@ export function Sidebar() {
                 key={trip.id}
                 type="button"
                 onClick={() => void openTrip(trip)}
-                className={`flex cursor-pointer flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[#f2f4fa] xl:px-4 xl:py-3.5 ${
-                  activePlanId === trip.id ? 'bg-[#eef2fc]' : ''
-                }`}
+                className={`flex cursor-pointer flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-[#f2f4fa] xl:px-4 xl:py-3.5 ${activePlanId === trip.id ? 'bg-[#eef2fc]' : ''
+                  }`}
               >
                 <span className="flex items-center gap-1.5 truncate text-[13px] font-medium text-[#12141c] xl:text-[17px]">
                   {shortName(trip.originName)} → {shortName(trip.destinationName)}
