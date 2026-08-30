@@ -1,12 +1,28 @@
 'use client';
 
+import { useState } from 'react';
+import { SHARE_TRIP } from '@detour/shared';
+import { gqlRequest } from '@/lib/api';
 import { Icon } from '@/lib/icons';
 import { usePlanStore } from '@/store/planStore';
 import { PlanTrace } from './PlanTrace';
 import { StopCard } from './StopCard';
 
 export function ResultsPanel({ onNewTrip }: { onNewTrip: () => void }) {
-  const { stops, summary, status, error } = usePlanStore();
+  const { stops, summary, status, error, planId } = usePlanStore();
+  const [copied, setCopied] = useState(false);
+
+  const share = async () => {
+    if (!planId) return;
+    try {
+      await gqlRequest<{ shareTrip: boolean }>(SHARE_TRIP, { id: planId });
+      await navigator.clipboard.writeText(`${window.location.origin}/?planId=${planId}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* mutation failed (e.g. plan not persisted) — keep the button as-is */
+    }
+  };
   const primary = stops.filter((s) => s.tier !== 'stretch');
   const stretch = stops.filter((s) => s.tier === 'stretch');
 
@@ -23,13 +39,30 @@ export function ResultsPanel({ onNewTrip }: { onNewTrip: () => void }) {
             </span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onNewTrip}
-          className="cursor-pointer rounded-full border border-[#e6e8ef] bg-white px-3 py-1 text-[11px] text-[#565b6b] transition hover:border-[#9db4ff] hover:text-[#2b6bff]"
-        >
-          New trip
-        </button>
+        <div className="flex items-center gap-1.5">
+          {planId && status === 'ready' && (
+            <button
+              type="button"
+              onClick={() => void share()}
+              className="flex cursor-pointer items-center gap-1 rounded-full border border-[#e6e8ef] bg-white px-3 py-1 text-[11px] text-[#565b6b] transition hover:border-[#9db4ff] hover:text-[#2b6bff]"
+            >
+              {copied ? (
+                <>
+                  <Icon name="check" size={11} className="text-[#1d9e75]" /> Link copied
+                </>
+              ) : (
+                'Share'
+              )}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onNewTrip}
+            className="cursor-pointer rounded-full border border-[#e6e8ef] bg-white px-3 py-1 text-[11px] text-[#565b6b] transition hover:border-[#9db4ff] hover:text-[#2b6bff]"
+          >
+            New trip
+          </button>
+        </div>
       </div>
 
       <PlanTrace />

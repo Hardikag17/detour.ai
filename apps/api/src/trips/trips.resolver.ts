@@ -1,4 +1,4 @@
-import { Args, Field, ID, Int, Float, ObjectType, Query, Resolver } from '@nestjs/graphql';
+import { Args, Field, ID, Int, Float, ObjectType, Query, Resolver, Mutation } from '@nestjs/graphql';
 import { LatLng, StopEvent, WhyReason } from '../graphql/types/plan.types';
 import { make } from '../util/make';
 import { TripEntity } from './trip.entity';
@@ -35,6 +35,9 @@ export class SavedTrip {
 
   @Field(() => [StopEvent])
   stops!: StopEvent[];
+
+  @Field({defaultValue: false})
+  isShareable!: boolean
 
   @Field()
   createdAt!: string;
@@ -77,5 +80,12 @@ export class TripsResolver {
   async trip(@Args('id', { type: () => ID }) id: string): Promise<SavedTrip | null> {
     const row = await this.trips.trip(id);
     return row ? toSavedTrip(row) : null;
+  }
+
+  @Mutation(()=>Boolean, {description: 'Give trip shareable access'})
+  async shareTrip(
+    @Args('id', {type: ()=> ID}) tripId: string)
+    : Promise<boolean> {
+    return await this.trips.shareTrip(tripId);
   }
 }

@@ -90,7 +90,7 @@ docker compose up -d postgres redis
 pnpm dev
 ```
 
-Web starts on `http://localhost:3000`, API with GraphiQL on `http://localhost:4000/graphql`.
+Web starts on `http://localhost:3000`, API with GraphiQL on `http://localhost:4000/api`.
 
 The FE/BE contract is fully generated — no hand-maintained type copies: the API writes `schema.gql` from its decorated classes on every boot, and `pnpm codegen` validates the query documents against it and emits the frontend types (a typo'd field fails the build, not the user). Run it after changing the schema or any query:
 

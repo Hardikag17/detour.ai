@@ -1,7 +1,10 @@
 import type { TripRecommendation } from './interfaces';
 
+/** GraphQL path — must match API_PATH in apps/api/src/config.ts (the two packages are deliberately decoupled). */
+export const API_PATH = '/api';
+
 /** Default GraphQL endpoint when NEXT_PUBLIC_API_URL is not set. */
-export const DEFAULT_API_URL = 'http://localhost:4000/graphql';
+export const DEFAULT_API_URL = `http://localhost:4000${API_PATH}`;
 
 /** Detour tolerance: the user picks R km; we search out to R × STRETCH_MULTIPLIER. */
 export const DETOUR = {

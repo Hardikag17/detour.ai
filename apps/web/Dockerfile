@@ -4,7 +4,7 @@ RUN corepack enable
 WORKDIR /repo
 
 FROM base AS build
-ARG NEXT_PUBLIC_API_URL=http://localhost:4000/graphql
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000/api
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
 COPY apps/web/package.json apps/web/

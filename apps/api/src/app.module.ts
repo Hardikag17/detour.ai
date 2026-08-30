@@ -3,6 +3,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { YogaDriver, YogaDriverConfig } from '@graphql-yoga/nestjs';
 import { join } from 'node:path';
+import { API_PATH } from './config';
 import { AgentModule } from './agent/agent.module';
 import { CacheModule } from './cache/cache.module';
 import { GoogleModule } from './google/google.module';
@@ -29,6 +30,7 @@ const dbImports = process.env.DATABASE_URL
   imports: [
     GraphQLModule.forRoot<YogaDriverConfig>({
       driver: YogaDriver,
+      path: API_PATH,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       graphiql: true,
     }),

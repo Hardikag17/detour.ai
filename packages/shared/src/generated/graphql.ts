@@ -29,11 +29,18 @@ export type RecentTripsQueryVariables = Exact<{
 }>;
 
 
-export type RecentTripsQuery = { recentTrips: Array<{ id: string, prompt: string, originName: string, destinationName: string, distanceKm: number, polyline: string | null, stops: Array<{ id: string }> }> };
+export type RecentTripsQuery = { recentTrips: Array<{ id: string, prompt: string, originName: string, destinationName: string, distanceKm: number, polyline: string | null, isShareable: boolean, stops: Array<{ id: string }> }> };
 
 export type SavedTripQueryVariables = Exact<{
   id: string | number;
 }>;
 
 
-export type SavedTripQuery = { trip: { id: string, prompt: string, originName: string, destinationName: string, distanceKm: number, durationMin: number, summary: string | null, polyline: string | null, stops: Array<{ id: string, placeId: string, name: string, category: string, rating: number | null, reviewCount: number | null, priceLevel: number | null, detourKm: number, detourMin: number | null, tier: string, legLabel: string | null, location: { lat: number, lng: number }, why: Array<{ icon: string, text: string }> }> } | null };
+export type SavedTripQuery = { trip: { id: string, prompt: string, originName: string, destinationName: string, distanceKm: number, durationMin: number, summary: string | null, polyline: string | null, isShareable: boolean, stops: Array<{ id: string, placeId: string, name: string, category: string, rating: number | null, reviewCount: number | null, priceLevel: number | null, detourKm: number, detourMin: number | null, tier: string, legLabel: string | null, location: { lat: number, lng: number }, why: Array<{ icon: string, text: string }> }> } | null };
+
+export type ShareTripMutationVariables = Exact<{
+  id: string | number;
+}>;
+
+
+export type ShareTripMutation = { shareTrip: boolean };

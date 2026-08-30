@@ -31,9 +31,9 @@ export function Tagline() {
       </div>
       <div className='flex px-16 flex-col text-left content-start'>
         <h1 className=" mb-3 font-bold text-[44px] leading-[1.16] tracking-[-0.6px] text-[#080a10] md:text-[48px] xl:mb-6 xl:text-[68px] xl:tracking-[-1.8px]">
-          Don&apos;t just get there
+          Don&apos;t just get there.
           <br />
-          Explorrrrrrrr<br /> <span className="grad-text">everything in between</span>
+          Discover <span className="grad-text">everything in between.</span>
         </h1>
         <p className="text-[14px] font-bold leading-normal whitespace-nowrap text-[#565b6b] md:text-xl xl:text-[18px]">
           Tell us where you&apos;re going. We&apos;ll find{' '}

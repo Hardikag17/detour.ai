@@ -42,6 +42,9 @@ export class TripEntity {
   @OneToMany(() => StopEntity, (stop) => stop.trip, { cascade: true, eager: true })
   stops!: StopEntity[];
 
+  @Column('boolean', {default: false})
+  isShareable!: boolean
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt!: Date;
 }

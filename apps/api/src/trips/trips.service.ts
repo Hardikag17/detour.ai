@@ -1,4 +1,4 @@
-import { Injectable, Logger, Optional } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -82,5 +82,14 @@ export class TripsService {
   async trip(id: string): Promise<TripEntity | null> {
     if (!this.trips) return null;
     return this.trips.findOne({ where: { id } });
+  }
+
+  async shareTrip(tripId: string): Promise<boolean> {
+    if(!tripId) return false;
+    const result = await this.trips?.update({ id: tripId }, { isShareable: true });
+    if (!result?.affected) {
+      throw new NotFoundException(`Trip ${tripId} not found`);
+    }
+    return true;
   }
 }

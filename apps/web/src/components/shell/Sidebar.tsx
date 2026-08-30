@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { RECENT_TRIPS_QUERY, SAVED_TRIP_QUERY } from '@detour/shared';
-import type { RecentTripsQuery, SavedTripQuery } from '@detour/shared/generated/graphql';
+import { RECENT_TRIPS_QUERY } from '@detour/shared';
+import type { RecentTripsQuery } from '@detour/shared/generated/graphql';
 import { gqlRequest } from '@/lib/api';
+import { useLoadTrip } from '@/hooks/useLoadTrip';
 import { Icon } from '@/lib/icons';
 import { usePlanStore } from '@/store/planStore';
 import { useUiStore } from '@/store/uiStore';
@@ -22,6 +23,7 @@ const shortName = (full: string) => full.split(',')[0].trim();
 export function Sidebar() {
   const setPrompt = useUiStore((s) => s.setPrompt);
   const activePlanId = usePlanStore((s) => s.planId);
+  const loadTrip = useLoadTrip();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const { data: trips } = useQuery({
     queryKey: ['recentTrips'],
@@ -31,15 +33,16 @@ export function Sidebar() {
   });
 
   const openTrip = async (trip: RecentTrip) => {
-    setPrompt(trip.prompt);
     // Trips saved before polylines were stored can't redraw the map — prefill only.
-    if (!trip.polyline) return;
+    if (!trip.polyline) {
+      setPrompt(trip.prompt);
+      return;
+    }
     setLoadingId(trip.id);
     try {
-      const data = await gqlRequest<SavedTripQuery>(SAVED_TRIP_QUERY, { id: trip.id });
-      if (data.trip) usePlanStore.getState().hydrate(data.trip);
+      await loadTrip(trip.id);
     } catch {
-      /* leave the prefilled prompt as the fallback */
+      setPrompt(trip.prompt); // fallback: at least prefill the prompt
     } finally {
       setLoadingId(null);
     }

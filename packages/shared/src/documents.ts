@@ -65,6 +65,7 @@ export const RECENT_TRIPS_QUERY = /* GraphQL */ `
       destinationName
       distanceKm
       polyline
+      isShareable
       stops {
         id
       }
@@ -83,6 +84,7 @@ export const SAVED_TRIP_QUERY = /* GraphQL */ `
       durationMin
       summary
       polyline
+      isShareable
       stops {
         id
         placeId
@@ -105,5 +107,11 @@ export const SAVED_TRIP_QUERY = /* GraphQL */ `
         }
       }
     }
+  }
+`;
+
+export const SHARE_TRIP = /* GraphQL */ `
+  mutation ShareTrip($id: ID!) {
+    shareTrip(id: $id)
   }
 `;

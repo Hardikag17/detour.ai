@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { MapCanvas } from '@/components/landing/MapCanvas';
 import { SearchBar } from '@/components/landing/SearchBar';
@@ -19,6 +20,7 @@ const RouteMap = dynamic(() => import('@/components/results/RouteMap'), {
     </div>
   ),
 });
+import { useLoadTrip } from '@/hooks/useLoadTrip';
 import { usePlanTrip } from '@/hooks/usePlanTrip';
 import { usePlanStore } from '@/store/planStore';
 
@@ -26,6 +28,17 @@ export default function Home() {
   const status = usePlanStore((s) => s.status);
   const reset = usePlanStore((s) => s.reset);
   const { planTrip, cancel } = usePlanTrip();
+  const loadTrip = useLoadTrip();
+
+  // Share links: /?planId=<uuid> loads that saved plan as if clicked in the sidebar.
+  // (window.location instead of useSearchParams — avoids Next's Suspense requirement.)
+  useEffect(() => {
+    const planId = new URLSearchParams(window.location.search).get('planId');
+    if (!planId) return;
+    void loadTrip(planId)
+      .catch(() => {})
+      .finally(() => window.history.replaceState({}, '', window.location.pathname));
+  }, [loadTrip]);
 
   const handleSubmit = (prompt: string, refine: boolean) => {
     void planTrip(prompt, refine);

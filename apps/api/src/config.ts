@@ -3,6 +3,9 @@
  * UI constants) live in packages/shared; these are API internals only.
  */
 
+/** Where GraphQL is served. Web's DEFAULT_API_URL (packages/shared) must match. */
+export const API_PATH = '/api';
+
 export const AGENT = {
   CLAUDE_MODEL: 'claude-sonnet-4-5',
   GEMINI_MODEL: 'gemini-3.6-flash',
